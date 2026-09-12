@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#111827">
+<meta id="themeColor" name="theme-color" content="#111827">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <title>Worth My Time</title>
@@ -65,12 +65,33 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:26px}
  header{align-items:flex-start}
  .brand{font-size:21px}
 }
+
+.theme-toggle{border:1px solid var(--line);background:var(--card);color:var(--text);padding:9px 12px;border-radius:9px;font-weight:650;white-space:nowrap}
+.theme-toggle:hover{border-color:#98a2b3}
+body.dark{
+  --bg:#0f141b; --card:#171e27; --text:#f2f4f7; --muted:#98a2b3;
+  --line:#344054; --accent:#f2f4f7; --accent2:#d0d5dd;
+  --good:#6ce9a6; --bad:#f97066; --soft:#111820;
+}
+body.dark .tab{background:var(--card);color:var(--accent2);border-color:var(--line)}
+body.dark .tab.active{background:#f2f4f7;color:#111827;border-color:#f2f4f7}
+body.dark input,body.dark select{background:#10161d;color:var(--text);border-color:#475467}
+body.dark input:focus,body.dark select:focus{border-color:#98a2b3;box-shadow:0 0 0 3px rgba(152,162,179,.14)}
+body.dark .btn{background:#f2f4f7;color:#111827}
+body.dark .btn.secondary{background:#27313d;color:#f2f4f7}
+body.dark .btn.danger{background:transparent;color:var(--bad);border-color:#5b2a2a}
+body.dark .remove{background:#10161d;border-color:var(--line);color:var(--bad)}
+body.dark .notice{background:#2b2515;border-color:#66521b;color:#f5d36b}
+body.dark .notice.error{background:#2b1717;border-color:#6b2b2b;color:#fda29b}
+body.dark .notice.success{background:#10261b;border-color:#1f6b43;color:#6ce9a6}
+body.dark .item{background:var(--card);border-color:var(--line)}
 </style>
 </head>
 <body>
 <div class="container">
 <header>
   <div class="brand">Worth My Time<small>See purchases in working time</small></div>
+  <button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch colour theme">Dark mode</button>
 </header>
 
 <div class="tabs">
@@ -232,6 +253,21 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:26px}
 const KEY="worthMyTime.v1";
 const defaults={income:30000,days:5,hours:8,expenses:[],wishlist:[],history:[],goals:[],allocations:[]};
 let state=load();
+
+const THEME_KEY="worthMyTime.theme";
+function applyTheme(theme){
+  const dark=theme==="dark";
+  document.body.classList.toggle("dark",dark);
+  const button=document.getElementById("themeToggle");
+  if(button){
+    button.textContent=dark?"Light mode":"Dark mode";
+    button.setAttribute("aria-label",dark?"Switch to light mode":"Switch to dark mode");
+  }
+  const themeColor=document.getElementById("themeColor");
+  if(themeColor) themeColor.content=dark?"#0f141b":"#111827";
+}
+const savedTheme=localStorage.getItem(THEME_KEY)||"light";
+applyTheme(savedTheme);
 
 if(!Array.isArray(state.allocations)) state.allocations=[];
 if(Array.isArray(state.goals)){
@@ -485,6 +521,11 @@ function calculate(){
   state.wishlist.push({name,price});save();renderWish();renderAllocationTargets();
  };
 }
+document.getElementById("themeToggle").onclick=()=>{
+  const next=document.body.classList.contains("dark")?"light":"dark";
+  localStorage.setItem(THEME_KEY,next);
+  applyTheme(next);
+};
 document.getElementById("calculateBtn").onclick=calculate;
 document.getElementById("addExpense").onclick=()=>{
  state.expenses.push({name:"",amount:0});

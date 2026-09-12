@@ -1,4 +1,4 @@
-# Worth My Time v1.6
+# Worth My Time v1.7
 
 Progressive Web App version of Worth My Time.
 
@@ -9,3 +9,5 @@ Files:
 - icons/: app icons
 
 The application stores user data locally in the browser. No financial data is sent to a server by the application.
+
+- Dark mode toggle with local browser preference.
