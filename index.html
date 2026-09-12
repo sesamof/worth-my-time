@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#111827">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<title>Worth My Time</title>
+<style>
+:root {
+  --bg:#f4f5f7; --card:#fff; --text:#17202a; --muted:#667085;
+  --line:#e4e7ec; --accent:#111827; --accent2:#344054;
+  --good:#087443; --bad:#b42318; --soft:#f8fafc;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+button,input{font:inherit}
+button{cursor:pointer}
+.container{max-width:1050px;margin:auto;padding:24px 18px 48px}
+header{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:22px}
+.brand{font-size:24px;font-weight:750;letter-spacing:-.4px}
+.brand small{display:block;font-size:12px;font-weight:500;color:var(--muted);letter-spacing:0;margin-top:3px}
+.tabs{display:flex;gap:6px;overflow:auto;padding-bottom:4px;margin-bottom:20px}
+.tab{border:1px solid var(--line);background:var(--card);padding:9px 14px;border-radius:9px;color:var(--accent2);white-space:nowrap}
+.tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.view{display:none}.view.active{display:block}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;box-shadow:0 1px 2px rgba(16,24,40,.03)}
+.card h2,.card h3{margin:0 0 14px;letter-spacing:-.2px}
+label{display:block;font-size:13px;font-weight:650;margin:14px 0 6px}
+input{width:100%;padding:11px 12px;border:1px solid #d0d5dd;border-radius:9px;background:#fff;color:var(--text);outline:none}
+input:focus{border-color:#667085;box-shadow:0 0 0 3px rgba(102,112,133,.12)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.btn{border:0;border-radius:9px;padding:11px 15px;background:var(--accent);color:#fff;font-weight:650}
+.btn.secondary{background:#eef0f3;color:var(--accent)}
+.btn.danger{background:#fff;color:var(--bad);border:1px solid #f0c4c0}
+.btn.full{width:100%;margin-top:16px}
+.expense-row{display:grid;grid-template-columns:1fr 130px 42px;gap:8px;margin:8px 0}
+.remove{border:1px solid var(--line);background:#fff;border-radius:8px;color:var(--bad)}
+.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
+.metric{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:13px}
+.metric span{display:block;color:var(--muted);font-size:12px;margin-bottom:5px}
+.metric strong{font-size:18px}
+.hero{text-align:center;padding:28px 20px}
+.hero .eyebrow{font-size:13px;color:var(--muted);font-weight:650}
+.hero .big{font-size:clamp(42px,8vw,68px);line-height:1;font-weight:800;letter-spacing:-2px;margin:8px 0}
+.hero .sub{color:var(--muted)}
+.notice{padding:12px 14px;border-radius:9px;background:#fff8e6;border:1px solid #f5df9b;color:#7a5700;font-size:13px;margin-top:14px}
+.error{background:#fff1f0;border-color:#f4c7c3;color:var(--bad)}
+.success{background:#ecfdf3;border-color:#abefc6;color:var(--good)}
+.item-list{display:grid;gap:9px}
+.item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px;border:1px solid var(--line);border-radius:10px;background:#fff}
+.item strong{display:block}.item small{color:var(--muted)}
+.item-actions{display:flex;gap:6px;align-items:center}
+.empty{color:var(--muted);font-size:14px;padding:18px 0}
+.kicker{font-size:13px;color:var(--muted)}
+.total{font-size:26px;font-weight:780;margin:5px 0}
+footer{text-align:center;color:var(--muted);font-size:12px;margin-top:26px}
+@media(max-width:720px){
+ .container{padding:16px 12px 36px}
+ .grid{grid-template-columns:1fr}
+ .summary{grid-template-columns:1fr}
+ .expense-row{grid-template-columns:1fr 110px 42px}
+ header{align-items:flex-start}
+ .brand{font-size:21px}
+}
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+  <div class="brand">Worth My Time<small>See purchases in working time</small></div>
+</header>
+
+<div class="tabs">
+  <button class="tab active" data-view="calculator">Calculator</button>
+  <button class="tab" data-view="setup">My Finances</button>
+  <button class="tab" data-view="wishlist">Want List</button>
+  <button class="tab" data-view="allocate">Allocate</button>
+  <button class="tab" data-view="history">History</button>
+  <button class="tab" data-view="savings">Savings</button>
+</div>
+
+<section id="calculator" class="view active">
+  <div class="card hero">
+    <div class="eyebrow">YOUR REAL AVAILABLE HOURLY RATE</div>
+    <div class="big" id="rateDisplay">R0.00</div>
+    <div class="sub" id="rateSub">Set up your income, fixed expenses and working hours.</div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h2>What do you want to buy?</h2>
+    <div class="row">
+      <div>
+        <label for="itemName">Item</label>
+        <input id="itemName" placeholder="e.g. MacBook Air">
+      </div>
+      <div>
+        <label for="itemPrice">Price</label>
+        <input id="itemPrice" type="number" min="0" step="0.01" placeholder="e.g. 21999">
+      </div>
+    </div>
+    <button class="btn full" id="calculateBtn">Calculate</button>
+    <div id="calcResult"></div>
+  </div>
+</section>
+
+<section id="setup" class="view">
+  <div class="grid">
+    <div class="card">
+      <h2>Income</h2>
+      <label for="income">Monthly take-home income</label>
+      <input id="income" type="number" min="0" step="0.01" placeholder="30000">
+      <p class="kicker">Use the amount that actually reaches your account each month.</p>
+    </div>
+    <div class="card">
+      <h2>Working time</h2>
+      <div class="row">
+        <div>
+          <label for="days">Working days per week</label>
+          <input id="days" type="number" min="1" max="7" step="1" value="5">
+        </div>
+        <div>
+          <label for="hours">Hours per working day</label>
+          <input id="hours" type="number" min="0.1" max="24" step="0.1" value="8">
+        </div>
+      </div>
+      <p class="kicker">Monthly working hours use 52 weeks ÷ 12 months.</p>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h2>Fixed monthly expenses</h2>
+    <p class="kicker">Add the commitments you must pay each month. These are deducted before your real available rate is calculated.</p>
+    <div id="expenses"></div>
+    <button class="btn secondary" id="addExpense">+ Add expense</button>
+    <div class="summary">
+      <div class="metric"><span>Income</span><strong id="sumIncome">R0.00</strong></div>
+      <div class="metric"><span>Fixed expenses</span><strong id="sumExpenses">R0.00</strong></div>
+      <div class="metric"><span>Available cash</span><strong id="sumAvailable">R0.00</strong></div>
+    </div>
+    <div id="setupNotice"></div>
+  </div>
+</section>
+
+<section id="wishlist" class="view">
+  <div class="card">
+    <h2>My Want List</h2>
+    <p class="kicker">Save things you are considering and see their cost in working time.</p>
+    <div class="row">
+      <div><label for="wishName">Item</label><input id="wishName" placeholder="e.g. Camera"></div>
+      <div><label for="wishPrice">Price</label><input id="wishPrice" type="number" min="0" step="0.01" placeholder="18000"></div>
+    </div>
+    <button class="btn full" id="addWish">Add to Want List</button>
+    <div id="wishList" class="item-list" style="margin-top:16px"></div>
+    <div class="card" style="margin-top:14px;background:var(--soft)">
+      <div class="kicker">TOTAL WANT LIST</div>
+      <div class="total" id="wishTotal">R0.00</div>
+      <div class="kicker" id="wishHours">0h 0m of work</div>
+    </div>
+  </div>
+</section>
+
+
+<section id="allocate" class="view">
+  <div class="card">
+    <h2>Allocate money</h2>
+    <p class="kicker">Choose something you are saving for and record each amount you put aside.</p>
+    <label for="allocationItem">What are you saving for?</label>
+    <select id="allocationItem"><option value="">Choose an item</option></select>
+    <div class="row">
+      <div>
+        <label for="allocationAmount">Amount to allocate</label>
+        <input id="allocationAmount" type="number" min="0.01" step="0.01" placeholder="e.g. 500">
+      </div>
+      <div>
+        <label for="allocationDate">Date</label>
+        <input id="allocationDate" type="date">
+      </div>
+    </div>
+    <label for="allocationNote">Note (optional)</label>
+    <input id="allocationNote" placeholder="e.g. September saving">
+    <button class="btn full" id="addAllocation">Allocate Money</button>
+    <div id="allocationMessage"></div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h2>My allocations</h2>
+    <div id="allocationList" class="item-list"></div>
+  </div>
+</section>
+
+<section id="history" class="view">
+  <div class="card">
+    <h2>Purchase History</h2>
+    <div id="historyList" class="item-list"></div>
+    <button class="btn danger full" id="clearHistory">Clear History</button>
+  </div>
+</section>
+
+
+<section id="savings" class="view">
+  <div class="card">
+    <h2>Set up a savings goal</h2>
+    <p class="kicker">Create the item you want to save for. After that, use Allocate whenever you put money aside.</p>
+    <div class="row">
+      <div>
+        <label for="goalName">What are you saving for?</label>
+        <input id="goalName" placeholder="e.g. MacBook Air">
+      </div>
+      <div>
+        <label for="goalTarget">Purchase price</label>
+        <input id="goalTarget" type="number" min="0.01" step="0.01" placeholder="21999">
+      </div>
+    </div>
+    <button class="btn full" id="addGoal">Create Savings Goal</button>
+    <div id="goalPreview"></div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h2>My savings goals</h2>
+    <div id="goalList" class="item-list"></div>
+  </div>
+</section>
+
+
+<footer>Worth My Time • Personal use • Your data is stored locally in this browser.</footer>
+</div>
+
+<script>
+const KEY="worthMyTime.v1";
+const defaults={income:30000,days:5,hours:8,expenses:[],wishlist:[],history:[],goals:[],allocations:[]};
+let state=load();
+
+if(!Array.isArray(state.allocations)) state.allocations=[];
+if(Array.isArray(state.goals)){
+  state.goals=state.goals.map(g=>({name:g.name,target:Number(g.target)||0}));
+}
+save();
+
+
+function load(){
+  try{return {...defaults,...JSON.parse(localStorage.getItem(KEY)||"{}")};}
+  catch(e){return {...defaults};}
+}
+function save(){localStorage.setItem(KEY,JSON.stringify(state));}
+function money(n){return "R"+Number(n||0).toLocaleString("en-ZA",{minimumFractionDigits:2,maximumFractionDigits:2});}
+function monthlyHours(){return Number(state.days||0)*Number(state.hours||0)*(52/12);}
+function expenseTotal(){return state.expenses.reduce((s,e)=>s+Number(e.amount||0),0);}
+function available(){return Number(state.income||0)-expenseTotal();}
+function realRate(){const h=monthlyHours(); return h>0 ? Math.max(available(),0)/h : 0;}
+function timeFor(price){
+  const rate=realRate();
+  if(rate<=0)return null;
+  const totalMinutes=Math.round((Number(price)/rate)*60);
+  const hours=Math.floor(totalMinutes/60), mins=totalMinutes%60;
+  const days=totalMinutes/(60*Number(state.hours||8));
+  return {totalMinutes,hours,mins,days};
+}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));}
+
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{
+ document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+ document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));
+ b.classList.add("active"); document.getElementById(b.dataset.view).classList.add("active");
+ render();
+});
+
+function bindSetup(){
+ ["income","days","hours"].forEach(id=>{
+  const el=document.getElementById(id);
+  el.value=state[id];
+  el.oninput=()=>{
+    state[id]=Number(el.value)||0;
+    save();
+    updateFinancialSummary();
+    renderRate();
+    renderWish();
+  };
+ });
+}
+function renderExpenses(){
+ const box=document.getElementById("expenses");
+ box.innerHTML=state.expenses.length?state.expenses.map((e,i)=>`
+  <div class="expense-row">
+   <input data-exp-name="${i}" value="${esc(e.name)}" placeholder="Expense">
+   <input data-exp-amt="${i}" type="number" min="0" step="0.01" value="${e.amount}">
+   <button type="button" class="remove" data-exp-remove="${i}" aria-label="Remove expense">×</button>
+  </div>`).join(""):`<div class="empty">No fixed expenses added yet. Click "+ Add expense" below to add one.</div>`;
+
+ box.querySelectorAll("[data-exp-name]").forEach(el=>{
+   el.oninput=()=>{
+     const i=Number(el.dataset.expName);
+     if(state.expenses[i]) state.expenses[i].name=el.value;
+     save();
+     updateFinancialSummary();
+   };
+ });
+ box.querySelectorAll("[data-exp-amt]").forEach(el=>{
+   el.oninput=()=>{
+     const i=Number(el.dataset.expAmt);
+     if(state.expenses[i]) state.expenses[i].amount=Number(el.value)||0;
+     save();
+     updateFinancialSummary();
+   };
+ });
+ box.querySelectorAll("[data-exp-remove]").forEach(el=>{
+   el.onclick=()=>{
+     state.expenses.splice(Number(el.dataset.expRemove),1);
+     save();
+     renderExpenses();
+     updateFinancialSummary();
+     renderRate();
+     renderWish();
+   };
+ });
+}
+function updateFinancialSummary(){
+ document.getElementById("sumIncome").textContent=money(state.income);
+ document.getElementById("sumExpenses").textContent=money(expenseTotal());
+ document.getElementById("sumAvailable").textContent=money(available());
+ const n=document.getElementById("setupNotice");
+ n.innerHTML=available()<0?`<div class="notice error">Your fixed expenses are higher than your income. The app cannot calculate a meaningful discretionary hourly rate until this is corrected.</div>`:"";
+}
+function renderSetup(){
+ bindSetup();
+ renderExpenses();
+ updateFinancialSummary();
+}
+function renderRate(){
+ document.getElementById("rateDisplay").textContent=money(realRate());
+ const h=monthlyHours();
+ document.getElementById("rateSub").textContent=h>0?`${money(Math.max(available(),0))} available each month ÷ ${h.toFixed(1)} working hours/month`:"Set up your working hours.";
+}
+function renderWish(){
+ const box=document.getElementById("wishList");
+ if(!state.wishlist.length)box.innerHTML='<div class="empty">Your Want List is empty.</div>';
+ else box.innerHTML=state.wishlist.map((w,i)=>{
+   const t=timeFor(w.price);
+   return `<div class="item"><div><strong>${esc(w.name)}</strong><small>${money(w.price)} • ${t?`${t.hours}h ${t.mins}m`: "Rate not available"}</small></div><div class="item-actions"><button class="btn secondary" data-wish-calc="${i}">Use</button><button class="btn danger" data-wish-del="${i}">Delete</button></div></div>`;
+ }).join("");
+ box.querySelectorAll("[data-wish-del]").forEach(b=>b.onclick=()=>{state.wishlist.splice(Number(b.dataset.wishDel),1);save();renderWish();});
+ box.querySelectorAll("[data-wish-calc]").forEach(b=>b.onclick=()=>{const w=state.wishlist[Number(b.dataset.wishCalc)];document.getElementById("itemName").value=w.name;document.getElementById("itemPrice").value=w.price;document.querySelector('[data-view="calculator"]').click();calculate();});
+ const total=state.wishlist.reduce((s,w)=>s+Number(w.price||0),0);
+ const t=timeFor(total);
+ document.getElementById("wishTotal").textContent=money(total);
+ document.getElementById("wishHours").textContent=t?`${t.hours}h ${t.mins}m of work • ${t.days.toFixed(1)} working days`:"Set up your finances to calculate working time.";
+}
+function renderHistory(){
+ const box=document.getElementById("historyList");
+ if(!state.history.length)box.innerHTML='<div class="empty">No purchases calculated yet.</div>';
+ else box.innerHTML=state.history.map((h,i)=>`<div class="item"><div><strong>${esc(h.name)}</strong><small>${money(h.price)} • ${h.hours}h ${h.mins}m • ${new Date(h.date).toLocaleDateString("en-ZA")}</small></div><button class="btn danger" data-hist-del="${i}">Delete</button></div>`).join("");
+ box.querySelectorAll("[data-hist-del]").forEach(b=>b.onclick=()=>{state.history.splice(Number(b.dataset.histDel),1);save();renderHistory();});
+}
+
+function getGoalSaved(goalName){
+  return state.allocations.filter(a=>a.goalName===goalName)
+    .reduce((sum,a)=>sum+Number(a.amount||0),0);
+}
+
+function renderAllocationTargets(){
+  const sel=document.getElementById("allocationItem");
+  if(!sel)return;
+  const current=sel.value;
+
+  // Items on the Want List are valid things to save for. Existing savings
+  // goals are also shown. Keep one entry per item name.
+  const items=[];
+  const seen=new Set();
+  state.wishlist.forEach(w=>{
+    const name=String(w.name||"").trim();
+    if(!name||seen.has(name.toLowerCase()))return;
+    seen.add(name.toLowerCase());
+    items.push({value:"item:"+name,name,target:Number(w.price)||0});
+  });
+  state.goals.forEach(g=>{
+    const name=String(g.name||"").trim();
+    if(!name||seen.has(name.toLowerCase()))return;
+    seen.add(name.toLowerCase());
+    items.push({value:"item:"+name,name,target:Number(g.target)||0});
+  });
+
+  sel.innerHTML='<option value="">Choose an item</option>'+
+    items.map(t=>`<option value="${esc(t.value)}">${esc(t.name)} • ${money(t.target)}</option>`).join("");
+  if(items.some(t=>t.value===current)) sel.value=current;
+}
+
+function renderAllocations(){
+  renderAllocationTargets();
+  const box=document.getElementById("allocationList");
+  if(!box)return;
+  if(!state.allocations.length){
+    box.innerHTML='<div class="empty">No money has been allocated yet.</div>';
+    return;
+  }
+  box.innerHTML=state.allocations.slice().reverse().map((a,rev)=>{
+    const i=state.allocations.length-1-rev;
+    return `<div class="item">
+      <div><strong>${esc(a.goalName)}</strong><small>${money(a.amount)} • ${esc(a.date)}${a.note?` • ${esc(a.note)}`:""}</small></div>
+      <button class="btn danger" data-allocation-del="${i}">Delete</button>
+    </div>`;
+  }).join("");
+  box.querySelectorAll("[data-allocation-del]").forEach(b=>b.onclick=()=>{
+    state.allocations.splice(Number(b.dataset.allocationDel),1);
+    save();
+    renderAllocations();
+    renderGoals();
+  });
+}
+
+function renderGoals(){
+  const box=document.getElementById("goalList");
+  if(!box)return;
+  if(!state.goals.length){
+    box.innerHTML='<div class="empty">No savings goals yet. Create one above.</div>';
+    return;
+  }
+  box.innerHTML=state.goals.map((g,i)=>{
+    const target=Number(g.target)||0;
+    const saved=getGoalSaved(g.name);
+    const remaining=Math.max(target-saved,0);
+    const t=timeFor(remaining);
+    const pct=Math.min(100,target>0?saved/target*100:0);
+    return `<div class="card" style="background:var(--soft);padding:16px">
+      <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start">
+        <div>
+          <strong style="font-size:19px">${esc(g.name)}</strong>
+          <div class="kicker" style="margin-top:4px">${money(saved)} saved of ${money(target)} • ${pct.toFixed(0)}%</div>
+        </div>
+        <div class="item-actions">
+          <button class="btn secondary" data-goal-allocate="${i}">Allocate</button>
+          <button class="btn danger" data-goal-del="${i}">Delete</button>
+        </div>
+      </div>
+      <div class="summary">
+        <div class="metric"><span>Purchase price</span><strong>${money(target)}</strong></div>
+        <div class="metric"><span>Still needed</span><strong>${money(remaining)}</strong></div>
+        <div class="metric"><span>Work remaining</span><strong>${t?`${t.hours}h ${String(t.mins).padStart(2,"0")}m`:"—"}</strong></div>
+      </div>
+      <div style="margin-top:12px">${remaining===0
+        ? '<div class="notice success">You have saved enough to buy it.</div>'
+        : `<div class="kicker">${money(remaining)} still needed.</div>`}</div>
+    </div>`;
+  }).join("");
+
+  box.querySelectorAll("[data-goal-del]").forEach(b=>b.onclick=()=>{
+    const i=Number(b.dataset.goalDel);
+    const name=state.goals[i]?.name;
+    state.goals.splice(i,1);
+    state.allocations=state.allocations.filter(a=>a.goalName!==name);
+    save();
+    renderGoals();
+    renderAllocations();
+  });
+
+  box.querySelectorAll("[data-goal-allocate]").forEach(b=>b.onclick=()=>{
+    const g=state.goals[Number(b.dataset.goalAllocate)];
+    document.querySelector('[data-view="allocate"]').click();
+    document.getElementById("allocationItem").value="item:"+g.name;
+    document.getElementById("allocationAmount").focus();
+  });
+}
+
+function calculate(){
+ const name=document.getElementById("itemName").value.trim()||"Purchase";
+ const price=Number(document.getElementById("itemPrice").value);
+ const box=document.getElementById("calcResult");
+ if(!price||price<0){box.innerHTML='<div class="notice error">Enter a valid item price.</div>';return;}
+ const t=timeFor(price);
+ if(!t){box.innerHTML='<div class="notice error">Set up your income, fixed expenses and working hours first.</div>';return;}
+ box.innerHTML=`<div class="card hero" style="margin-top:16px;background:var(--soft)">
+   <div class="eyebrow">${esc(name)} • ${money(price)}</div>
+   <div class="big">${t.hours}h ${String(t.mins).padStart(2,"0")}m</div>
+   <div class="sub">${t.days.toFixed(1)} working days at ${state.hours} hours per day</div>
+   <div class="notice">This uses your real available hourly rate of ${money(realRate())}, after fixed monthly expenses.</div>
+   <button class="btn full" id="saveCalc">Save to History</button>
+   <button class="btn secondary full" id="saveWish">Add to Want List</button>
+ </div>`;
+ document.getElementById("saveCalc").onclick=()=>{
+  state.history.unshift({name,price,hours:t.hours,mins:t.mins,date:new Date().toISOString()});
+  state.history=state.history.slice(0,100);save();renderHistory();
+ };
+ document.getElementById("saveWish").onclick=()=>{
+  state.wishlist.push({name,price});save();renderWish();renderAllocationTargets();
+ };
+}
+document.getElementById("calculateBtn").onclick=calculate;
+document.getElementById("addExpense").onclick=()=>{
+ state.expenses.push({name:"",amount:0});
+ save();
+ renderExpenses();
+ updateFinancialSummary();
+ renderRate();
+ renderWish();
+ const names=document.querySelectorAll("[data-exp-name]");
+ if(names.length) names[names.length-1].focus();
+};
+document.getElementById("addWish").onclick=()=>{
+ const name=document.getElementById("wishName").value.trim(), price=Number(document.getElementById("wishPrice").value);
+ if(!name||!price)return alert("Enter an item and price.");
+ state.wishlist.push({name,price});document.getElementById("wishName").value="";document.getElementById("wishPrice").value="";save();renderWish();renderAllocationTargets();
+};
+document.getElementById("clearHistory").onclick=()=>{if(confirm("Clear all purchase history?")){state.history=[];save();renderHistory();}};
+document.getElementById("addGoal").onclick=()=>{
+  const name=document.getElementById("goalName").value.trim();
+  const target=Number(document.getElementById("goalTarget").value)||0;
+  if(!name||target<=0){alert("Enter what you are saving for and the purchase price.");return;}
+  if(state.goals.some(g=>g.name.toLowerCase()===name.toLowerCase())){
+    alert("A savings goal with this name already exists.");return;
+  }
+  state.goals.push({name,target});
+  document.getElementById("goalName").value="";
+  document.getElementById("goalTarget").value="";
+  document.getElementById("goalPreview").innerHTML="";
+  save();
+  renderGoals();
+  renderAllocations();
+};
+document.getElementById("allocationDate").value=new Date().toISOString().slice(0,10);
+document.getElementById("addAllocation").onclick=()=>{
+  const selected=document.getElementById("allocationItem").value;
+  const amount=Number(document.getElementById("allocationAmount").value)||0;
+  const date=document.getElementById("allocationDate").value;
+  const note=document.getElementById("allocationNote").value.trim();
+  if(!selected){alert("Choose what you are saving for.");return;}
+  if(amount<=0){alert("Enter an amount greater than zero.");return;}
+  if(!date){alert("Choose a date.");return;}
+
+  const goalName=selected.startsWith("item:")?selected.slice(5):selected;
+  let goal=state.goals.find(g=>g.name===goalName);
+
+  // If the item came from the Want List, create its savings goal
+  // automatically. The user should not have to enter the same item twice.
+  if(!goal){
+    const wish=state.wishlist.find(w=>String(w.name||"").trim()===goalName);
+    if(!wish){alert("That savings item could not be found.");return;}
+    goal={name:goalName,target:Number(wish.price)||0};
+    state.goals.push(goal);
+  }
+
+  const remaining=Math.max(Number(goal.target)-getGoalSaved(goalName),0);
+  if(amount>remaining){
+    alert(`You only have ${money(remaining)} left to allocate for this goal.`);
+    return;
+  }
+
+  state.allocations.push({goalName,amount,date,note});
+  save();
+  document.getElementById("allocationAmount").value="";
+  document.getElementById("allocationNote").value="";
+  document.getElementById("allocationMessage").innerHTML='<div class="notice success">Money allocated successfully.</div>';
+  renderAllocations();
+  renderGoals();
+};
+function render(){renderRate();renderSetup();renderWish();renderAllocations();renderHistory();renderGoals();}
+render();
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
