@@ -246,7 +246,7 @@ body.dark .item{background:var(--card);border-color:var(--line)}
 </section>
 
 
-<footer>Worth My Time v1.8 • Personal use • Your data is stored locally in this browser.</footer>
+<footer>Worth My Time v1.9 • Personal use • Your data is stored locally in this browser.</footer>
 </div>
 
 <script>
@@ -341,7 +341,7 @@ function renderExpenses(){
  box.innerHTML=state.expenses.length?state.expenses.map((e,i)=>`
   <div class="expense-row">
    <input data-exp-name="${i}" value="${esc(e.name)}" placeholder="Expense">
-   <input data-exp-amt="${i}" type="number" min="0" step="0.01" value="${e.amount}">
+   <input data-exp-amt="${i}" type="number" min="0" step="0.01" value="${Number(e.amount)||0}">
    <button type="button" class="remove" data-exp-remove="${i}" aria-label="Remove expense">×</button>
   </div>`).join(""):`<div class="empty">No fixed expenses added yet. Click "+ Add expense" below to add one.</div>`;
 

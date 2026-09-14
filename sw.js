@@ -1,4 +1,4 @@
-const CACHE = "worth-my-time-v1.8-7";
+const CACHE = "worth-my-time-v1.9-1";
 const ASSETS = [
   "./",
   "./index.html",
