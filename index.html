@@ -246,7 +246,7 @@ body.dark .item{background:var(--card);border-color:var(--line)}
 </section>
 
 
-<footer>Worth My Time • Personal use • Your data is stored locally in this browser.</footer>
+<footer>Worth My Time v1.8 • Personal use • Your data is stored locally in this browser.</footer>
 </div>
 
 <script>
@@ -271,7 +271,7 @@ applyTheme(savedTheme);
 
 if(!Array.isArray(state.allocations)) state.allocations=[];
 if(Array.isArray(state.goals)){
-  state.goals=state.goals.map(g=>({name:g.name,target:Number(g.target)||0}));
+  state.goals=state.goals.map(g=>({name:g.name,target:Number(g.target)||0,creditRate:Number(g.creditRate)||17.5,creditMonths:Number(g.creditMonths)||12}));
 }
 save();
 
@@ -286,6 +286,26 @@ function monthlyHours(){return Number(state.days||0)*Number(state.hours||0)*(52/
 function expenseTotal(){return state.expenses.reduce((s,e)=>s+Number(e.amount||0),0);}
 function available(){return Number(state.income||0)-expenseTotal();}
 function realRate(){const h=monthlyHours(); return h>0 ? Math.max(available(),0)/h : 0;}
+function creditEstimate(principal, annualRatePct, months){
+  const p=Number(principal)||0;
+  const annual=Math.max(Number(annualRatePct)||0,0)/100;
+  const n=Math.max(Number(months)||0,0);
+  if(p<=0||n<=0)return null;
+  const r=annual/12;
+  const payment=r===0?p/n:p*r/(1-Math.pow(1+r,-n));
+  const total=payment*n;
+  const interest=Math.max(total-p,0);
+  const adjustedAvailable=Math.max(available()-payment,0);
+  const adjustedRate=monthlyHours()>0?adjustedAvailable/monthlyHours():0;
+  const bankMinutes=realRate()>0?Math.round((interest/realRate())*60):null;
+  const totalMinutes=adjustedRate>0?Math.round((total/adjustedRate)*60):null;
+  return {payment,total,interest,adjustedAvailable,adjustedRate,bankMinutes,totalMinutes};
+}
+function formatMinutes(totalMinutes){
+  if(totalMinutes===null||totalMinutes===undefined)return "—";
+  const m=Math.max(0,Math.round(totalMinutes));
+  return `${Math.floor(m/60)}h ${String(m%60).padStart(2,"0")}m`;
+}
 function timeFor(price){
   const rate=realRate();
   if(rate<=0)return null;
@@ -458,6 +478,11 @@ function renderGoals(){
     const remaining=Math.max(target-saved,0);
     const t=timeFor(remaining);
     const pct=Math.min(100,target>0?saved/target*100:0);
+    const rate=Number(g.creditRate)||17.5;
+    const months=Number(g.creditMonths)||12;
+    const credit=creditEstimate(target,rate,months);
+    const creditBankTime=credit?formatMinutes(credit.bankMinutes):"—";
+    const creditTotalTime=credit?formatMinutes(credit.totalMinutes):"—";
     return `<div class="card" style="background:var(--soft);padding:16px">
       <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start">
         <div>
@@ -477,6 +502,36 @@ function renderGoals(){
       <div style="margin-top:12px">${remaining===0
         ? '<div class="notice success">You have saved enough to buy it.</div>'
         : `<div class="kicker">${money(remaining)} still needed.</div>`}</div>
+
+      <div class="card" style="margin-top:16px;background:var(--bg);padding:16px">
+        <h3 style="margin:0 0 6px">Buy Now vs Save First</h3>
+        <p class="kicker" style="margin:0 0 14px">See what financing this purchase could cost in money and working time.</p>
+        <div class="row">
+          <div>
+            <label for="creditRate-${i}">Credit interest rate</label>
+            <input id="creditRate-${i}" data-credit-rate="${i}" type="number" min="0" step="0.1" value="${rate}">
+          </div>
+          <div>
+            <label for="creditMonths-${i}">Payment period</label>
+            <select id="creditMonths-${i}" data-credit-months="${i}">
+              ${[3,6,12,18,24].map(m=>`<option value="${m}" ${m===months?"selected":""}>${m} months</option>`).join("")}
+            </select>
+          </div>
+        </div>
+        ${credit?`<div class="summary" style="margin-top:14px">
+          <div class="metric"><span>Save first</span><strong>${money(target)}</strong><small>No interest</small></div>
+          <div class="metric"><span>Monthly payment</span><strong>${money(credit.payment)}</strong><small>Estimated</small></div>
+          <div class="metric"><span>Final credit cost</span><strong>${money(credit.total)}</strong><small>Extra: ${money(credit.interest)}</small></div>
+        </div>
+        <div class="notice" style="margin-top:12px"><strong>TIME GIVEN TO THE BANK</strong><br><span style="font-size:22px;font-weight:800">${creditBankTime}</span><br><small>The interest alone represents this much of your working time at your current real available hourly rate.</small></div>
+        <div class="summary" style="margin-top:12px">
+          <div class="metric"><span>Available cash while repaying</span><strong>${money(credit.adjustedAvailable)}</strong><small>Per month</small></div>
+          <div class="metric"><span>Adjusted hourly rate</span><strong>${money(credit.adjustedRate)}</strong><small>While repaying</small></div>
+          <div class="metric"><span>Total credit repayment time*</span><strong>${creditTotalTime}</strong><small>Using adjusted hourly rate</small></div>
+        </div>
+        <div class="kicker" style="margin-top:12px">* Estimate based on an amortising monthly payment at the selected annual interest rate. Actual credit-card interest, fees and daily calculations vary by provider.</div>`:
+        '<div class="notice error" style="margin-top:12px">Set up your finances and a valid purchase price to compare credit with saving first.</div>'}
+      </div>
     </div>`;
   }).join("");
 
@@ -495,6 +550,19 @@ function renderGoals(){
     document.querySelector('[data-view="allocate"]').click();
     document.getElementById("allocationItem").value="item:"+g.name;
     document.getElementById("allocationAmount").focus();
+  });
+
+  box.querySelectorAll("[data-credit-rate]").forEach(el=>el.oninput=()=>{
+    const i=Number(el.dataset.creditRate);
+    if(state.goals[i])state.goals[i].creditRate=Math.max(Number(el.value)||0,0);
+    save();
+    renderGoals();
+  });
+  box.querySelectorAll("[data-credit-months]").forEach(el=>el.onchange=()=>{
+    const i=Number(el.dataset.creditMonths);
+    if(state.goals[i])state.goals[i].creditMonths=Number(el.value)||12;
+    save();
+    renderGoals();
   });
 }
 
@@ -550,7 +618,7 @@ document.getElementById("addGoal").onclick=()=>{
   if(state.goals.some(g=>g.name.toLowerCase()===name.toLowerCase())){
     alert("A savings goal with this name already exists.");return;
   }
-  state.goals.push({name,target});
+  state.goals.push({name,target,creditRate:17.5,creditMonths:12});
   document.getElementById("goalName").value="";
   document.getElementById("goalTarget").value="";
   document.getElementById("goalPreview").innerHTML="";
@@ -576,7 +644,7 @@ document.getElementById("addAllocation").onclick=()=>{
   if(!goal){
     const wish=state.wishlist.find(w=>String(w.name||"").trim()===goalName);
     if(!wish){alert("That savings item could not be found.");return;}
-    goal={name:goalName,target:Number(wish.price)||0};
+    goal={name:goalName,target:Number(wish.price)||0,creditRate:17.5,creditMonths:12};
     state.goals.push(goal);
   }
 

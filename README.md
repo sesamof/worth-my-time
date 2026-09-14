@@ -1,13 +1,15 @@
-# Worth My Time v1.7
+# Worth My Time v1.8
 
-Progressive Web App version of Worth My Time.
+v1.8 adds a Buy Now vs Save First comparison to each Savings goal.
 
-Files:
-- index.html: application
-- manifest.webmanifest: PWA installation metadata
-- sw.js: offline caching
-- icons/: app icons
+## v1.8 changes
+- Compare saving the full purchase price with buying immediately on credit.
+- Default credit interest rate: 17.5% per year.
+- Payment periods: 3, 6, 12, 18 and 24 months.
+- Shows estimated monthly payment, final credit cost and extra interest.
+- Shows TIME GIVEN TO THE BANK as working time represented by the interest.
+- Shows available monthly cash and adjusted hourly rate while repaying.
+- Shows total credit repayment working time using the adjusted hourly rate.
+- Existing v1.7 features remain intact, including Dark mode and Want List to Allocate integration.
 
-The application stores user data locally in the browser. No financial data is sent to a server by the application.
-
-- Dark mode toggle with local browser preference.
+Credit figures are estimates using a standard amortising monthly-payment model. Actual credit-card interest, fees and daily-interest calculations vary by provider.
